@@ -29,6 +29,7 @@ const mutations = {
   },
   setLoading: (state, value) => { state.loading = value },
   setReload: (state, value) => { state.reload = value },
+  setProgress: (state, value) => { state.progress = value },
   setUser: (state, value) => {
     if (value === null) {
       state.user = null

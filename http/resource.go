@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -88,6 +90,181 @@ func resourceDeleteHandler(fileCache FileCache) handleFunc {
 
 		return http.StatusOK, nil
 	})
+}
+
+
+var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int, error){
+	tempFolder := "/home/niloy/codes/klovercloud/filebrowser/data/.temp/"
+	//
+	//if _, err := os.Stat(tempFolder); os.IsExist(err) {
+	//	os.RemoveAll(tempFolder)
+	//}
+
+	if _, err := os.Stat(tempFolder); os.IsNotExist(err) {
+		os.Mkdir(tempFolder, os.ModePerm)
+	}
+
+	switch r.Method {
+	case "GET":
+		resumableIdentifier, _ := r.URL.Query()["resumableIdentifier"]
+		resumableChunkNumber, _ := r.URL.Query()["resumableChunkNumber"]
+		path := fmt.Sprintf("%s%s", tempFolder, resumableIdentifier[0])
+		relativeChunk := fmt.Sprintf("%s%s%s%s", path, "/", "part", resumableChunkNumber[0])
+
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			os.Mkdir(path, os.ModePerm)
+		}
+
+		if _, err := os.Stat(relativeChunk); os.IsNotExist(err) {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusMethodNotAllowed)
+		} else {
+			os.RemoveAll(tempFolder)
+			http.Error(w, "Chunk already exist", http.StatusCreated)
+		}
+
+	default:
+		r.ParseMultipartForm(10 << 20)
+		file, _, err := r.FormFile("file")
+		if err != nil {
+			print(err.Error())
+			return 0, nil
+		}
+		defer file.Close()
+		resumableIdentifier, _ := r.URL.Query()["resumableIdentifier"]
+		resumableChunkNumber, _ := r.URL.Query()["resumableChunkNumber"]
+		path := fmt.Sprintf("%s%s", tempFolder, resumableIdentifier[0])
+		relativeChunk := fmt.Sprintf("%s%s%s%s", path, "/", "part", resumableChunkNumber[0])
+
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			os.Mkdir(path, os.ModePerm)
+		}
+
+		f, err := os.OpenFile(relativeChunk, os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			print(err.Error())
+		}
+		defer f.Close()
+		io.Copy(f, file)
+
+		/*
+			If it is the last chunk, trigger the recombination of chunks
+		*/
+		resumableTotalChunks, _ := r.URL.Query()["resumableTotalChunks"]
+		//resumableFilename, _ := r.URL.Query()["resumableFilename"]
+		resumableRelativePath, _ := r.URL.Query()["resumableRelativePath"]
+		//fmt.Println("Relative path: "+resumableRelativePath[0])
+
+		current, err := strconv.Atoi(resumableChunkNumber[0])
+		total, err := strconv.Atoi(resumableTotalChunks[0])
+		if current == total {
+			print("Combining chunks into one file")
+			combineChunks(uint64(total), path+"/part", resumableRelativePath[0])
+			err = os.Remove(path)
+			if err != nil {
+				fmt.Println(err)
+				//os.Exit(1)
+			}
+			os.Remove(tempFolder)
+		}
+
+	}
+	return renderJSON(w, r, nil)
+}
+
+func combineChunks(totalPartsNum uint64, path string, fileName string){
+	dir := "/home/niloy/codes/klovercloud/filebrowser/data/"
+	fileName = dir+fileName
+
+	if _, err := os.Stat(filepath.Dir(fileName)); os.IsNotExist(err) {
+		os.Mkdir(filepath.Dir(fileName), os.ModePerm)
+	}
+
+	_, err := os.Create(fileName)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	var writePosition int64 = 0
+	for j := uint64(0)+1; j <= totalPartsNum; j++ {
+
+		//read a chunk
+		currentChunkFileName := path + strconv.FormatUint(j, 10)
+
+		newFileChunk, err := os.Open(currentChunkFileName)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		defer newFileChunk.Close()
+
+		chunkInfo, err := newFileChunk.Stat()
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		// calculate the bytes size of each chunk
+		// we are not going to rely on previous data and constant
+
+		var chunkSize int64 = chunkInfo.Size()
+		chunkBufferBytes := make([]byte, chunkSize)
+
+		//fmt.Println("Appending at position : [", writePosition, "] bytes")
+		writePosition = writePosition + chunkSize
+
+		// read into chunkBufferBytes
+		reader := bufio.NewReader(newFileChunk)
+		_, err = reader.Read(chunkBufferBytes)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		// DON't USE ioutil.WriteFile -- it will overwrite the previous bytes!
+		// write/save buffer to disk
+		//ioutil.WriteFile(fileName, chunkBufferBytes, os.ModeAppend)
+
+		n, err := file.Write(chunkBufferBytes)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		file.Sync() //flush to disk
+
+		// free up the buffer for next cycle
+		// should not be a problem if the chunk size is small, but
+		// can be resource hogging if the chunk size is huge.
+		// also a good practice to clean up your own plate after eating
+
+		chunkBufferBytes = nil // reset or empty our buffer
+
+		fmt.Println("Written ", n, " bytes")
+
+		fmt.Println("Recombining part [", j, "] into : ", fileName)
+		err = os.Remove(currentChunkFileName)
+		if err != nil {
+			fmt.Println(err)
+			//os.Exit(1)
+		}
+	}
+
+	// now, we close the fileName
+	file.Close()
 }
 
 var resourcePostPutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {

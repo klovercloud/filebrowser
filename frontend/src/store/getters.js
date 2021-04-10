@@ -7,12 +7,7 @@ const getters = {
   isSharing: state =>  !state.loading && state.route.name === 'Share',
   selectedCount: state => state.selected.length,
   progress : state => {
-    if (state.upload.progress.length == 0) {
-      return 0;
-    }
-
-    let sum = state.upload.progress.reduce((acc, val) => acc + val)
-    return Math.ceil(sum / state.upload.size * 100);
+    return state.progress;
   }
 }
 

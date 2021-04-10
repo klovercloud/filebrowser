@@ -45,6 +45,9 @@ func NewHandler(imgSvc ImgService, fileCache FileCache, store *storage.Storage, 
 	users.Handle("/{id:[0-9]+}", monkey(userGetHandler, "")).Methods("GET")
 	users.Handle("/{id:[0-9]+}", monkey(userDeleteHandler, "")).Methods("DELETE")
 
+
+	api.PathPrefix("/chunk-upload").Handler(monkey(resumableUpload, "/api/chunk-upload")).Methods("GET")
+	api.PathPrefix("/chunk-upload").Handler(monkey(resumableUpload, "/api/chunk-upload")).Methods("POST")
 	api.PathPrefix("/resources").Handler(monkey(resourceGetHandler, "/api/resources")).Methods("GET")
 	api.PathPrefix("/resources").Handler(monkey(resourceDeleteHandler(fileCache), "/api/resources")).Methods("DELETE")
 	api.PathPrefix("/resources").Handler(monkey(resourcePostPutHandler, "/api/resources")).Methods("POST")

@@ -1,0 +1,8 @@
+{
+  "port": 8080,
+  "baseURL": "",
+  "address": "",
+  "log": "stdout",
+  "database": "/home/niloy/codes/klovercloud/filebrowser/database.db",
+  "root": "/home/niloy/codes/klovercloud/filebrowser/data"
+}
