@@ -105,6 +105,7 @@ var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int
 	//	os.RemoveAll(tempFolder)
 	//}
 
+
 	if _, err := os.Stat(tempFolder); os.IsNotExist(err) {
 		os.Mkdir(tempFolder, os.ModePerm)
 	}
@@ -135,6 +136,8 @@ var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int
 			return 0, nil
 		}
 		defer file.Close()
+
+		subPath := r.URL.Query()["subPath"][0]
 		resumableIdentifier, _ := r.URL.Query()["resumableIdentifier"]
 		resumableChunkNumber, _ := r.URL.Query()["resumableChunkNumber"]
 		path := fmt.Sprintf("%s%s", tempFolder, resumableIdentifier[0])
@@ -162,7 +165,7 @@ var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int
 		current, err := strconv.Atoi(resumableChunkNumber[0])
 		total, err := strconv.Atoi(resumableTotalChunks[0])
 		if current == total {
-			err = combineChunks(uint64(total), path+"/part", resumableRelativePath[0], server.Root)
+			err = combineChunks(uint64(total), path+"/part", resumableRelativePath[0], server.Root, subPath)
 			if err != nil {
 				return http.StatusInternalServerError, err
 			}
@@ -178,9 +181,9 @@ var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int
 	return renderJSON(w, r, nil)
 }
 
-func combineChunks(totalPartsNum uint64, path string, fileName string, rootDir string) error {
+func combineChunks(totalPartsNum uint64, path string, fileName string, rootDir string, subPath string) error {
 
-	dir := rootDir + "/"
+	dir := rootDir + "/" + subPath;
 	fileName = dir + fileName
 
 	log.Println("Combining chunks for:", fileName)

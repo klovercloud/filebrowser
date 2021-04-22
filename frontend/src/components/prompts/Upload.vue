@@ -35,9 +35,12 @@ export default {
     uploadFile: function () {
       document.getElementById('upload-input').click()
 
+      console.log("route: ")
+      console.log(this.$route.params.pathMatch);
       var self = this;
       var r = new Resumable({
         target: `${baseURL}/api/chunk-upload`,
+        query: {subPath : this.$route.params.pathMatch}
       });
       r.assignBrowse(document.getElementById('upload-input'));
 
@@ -98,6 +101,7 @@ export default {
       var self = this;
       var r = new Resumable({
         target: `${baseURL}/api/chunk-upload`,
+        query: {subPath : this.$route.params.pathMatch}
       });
       r.assignBrowse(document.getElementById('upload-folder-input'), true);
 
