@@ -23,8 +23,9 @@
 
 <script>
 
-import Resumable from "resumablejs";
-import {mapMutations} from "vuex";
+import Resumable from 'resumablejs';
+import { mapMutations } from 'vuex';
+import { baseURL } from '@/utils/constants';
 
 export default {
   name: 'upload',
@@ -36,7 +37,7 @@ export default {
 
       var self = this;
       var r = new Resumable({
-        target: 'http://localhost:8080/api/chunk-upload',
+        target: `${baseURL}/api/chunk-upload`,
       });
       r.assignBrowse(document.getElementById('upload-input'));
 
@@ -96,7 +97,7 @@ export default {
 
       var self = this;
       var r = new Resumable({
-        target: 'http://localhost:8080/api/chunk-upload',
+        target: `${baseURL}/api/chunk-upload`,
       });
       r.assignBrowse(document.getElementById('upload-folder-input'), true);
 

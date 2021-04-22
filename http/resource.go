@@ -3,8 +3,10 @@ package http
 import (
 	"bufio"
 	"fmt"
+	"github.com/spf13/afero"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,8 +14,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/spf13/afero"
 
 	"github.com/filebrowser/filebrowser/v2/errors"
 	"github.com/filebrowser/filebrowser/v2/files"
@@ -92,9 +92,14 @@ func resourceDeleteHandler(fileCache FileCache) handleFunc {
 	})
 }
 
+var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 
-var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int, error){
-	tempFolder := "/home/niloy/codes/klovercloud/filebrowser/data/.temp/"
+	server, err := d.store.Settings.GetServer()
+	if err != nil {
+		http.Error(w, "Server config not found", http.StatusInternalServerError)
+	}
+
+	tempFolder := server.Root + "/.temp/"
 	//
 	//if _, err := os.Stat(tempFolder); os.IsExist(err) {
 	//	os.RemoveAll(tempFolder)
@@ -157,8 +162,10 @@ var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int
 		current, err := strconv.Atoi(resumableChunkNumber[0])
 		total, err := strconv.Atoi(resumableTotalChunks[0])
 		if current == total {
-			print("Combining chunks into one file")
-			combineChunks(uint64(total), path+"/part", resumableRelativePath[0])
+			err = combineChunks(uint64(total), path+"/part", resumableRelativePath[0], server.Root)
+			if err != nil {
+				return http.StatusInternalServerError, err
+			}
 			err = os.Remove(path)
 			if err != nil {
 				fmt.Println(err)
@@ -171,9 +178,12 @@ var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int
 	return renderJSON(w, r, nil)
 }
 
-func combineChunks(totalPartsNum uint64, path string, fileName string){
-	dir := "/home/niloy/codes/klovercloud/filebrowser/data/"
-	fileName = dir+fileName
+func combineChunks(totalPartsNum uint64, path string, fileName string, rootDir string) error {
+
+	dir := rootDir + "/"
+	fileName = dir + fileName
+
+	log.Println("Combining chunks for:", fileName)
 
 	if _, err := os.Stat(filepath.Dir(fileName)); os.IsNotExist(err) {
 		os.Mkdir(filepath.Dir(fileName), os.ModePerm)
@@ -183,18 +193,18 @@ func combineChunks(totalPartsNum uint64, path string, fileName string){
 
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	var writePosition int64 = 0
-	for j := uint64(0)+1; j <= totalPartsNum; j++ {
+	for j := uint64(0) + 1; j <= totalPartsNum; j++ {
 
 		//read a chunk
 		currentChunkFileName := path + strconv.FormatUint(j, 10)
@@ -203,7 +213,7 @@ func combineChunks(totalPartsNum uint64, path string, fileName string){
 
 		if err != nil {
 			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 
 		defer newFileChunk.Close()
@@ -212,7 +222,7 @@ func combineChunks(totalPartsNum uint64, path string, fileName string){
 
 		if err != nil {
 			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 
 		// calculate the bytes size of each chunk
@@ -230,18 +240,18 @@ func combineChunks(totalPartsNum uint64, path string, fileName string){
 
 		if err != nil {
 			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 
 		// DON't USE ioutil.WriteFile -- it will overwrite the previous bytes!
 		// write/save buffer to disk
 		//ioutil.WriteFile(fileName, chunkBufferBytes, os.ModeAppend)
 
-		n, err := file.Write(chunkBufferBytes)
+		_, err = file.Write(chunkBufferBytes)
 
 		if err != nil {
 			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 
 		file.Sync() //flush to disk
@@ -253,18 +263,19 @@ func combineChunks(totalPartsNum uint64, path string, fileName string){
 
 		chunkBufferBytes = nil // reset or empty our buffer
 
-		fmt.Println("Written ", n, " bytes")
-
-		fmt.Println("Recombining part [", j, "] into : ", fileName)
 		err = os.Remove(currentChunkFileName)
 		if err != nil {
 			fmt.Println(err)
-			//os.Exit(1)
+			return err
 		}
 	}
 
+	log.Println("All chunks combined for:", fileName)
+
 	// now, we close the fileName
 	file.Close()
+
+	return nil
 }
 
 var resourcePostPutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
