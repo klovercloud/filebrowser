@@ -9,11 +9,10 @@
     <script src="[{[ .ReCaptchaHost ]}]/recaptcha/api.js?render=explicit"></script>
   [{[ end ]}]
 
-  <title>[{[ if .Name -]}][{[ .Name ]}][{[ else ]}]File Browser[{[ end ]}]</title>
+  <title>[{[ if .Name -]}][{[ .Name ]}][{[ else ]}]KloverCloud File Browser[{[ end ]}]</title>
 
-  <link rel="icon" type="image/png" sizes="32x32" href="[{[ .StaticURL ]}]/img/icons/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="[{[ .StaticURL ]}]/img/icons/favicon-16x16.png">
-
+  <link rel="icon" type="image/png" sizes="32x32" href="[{[ .StaticURL ]}]/img/icons/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="[{[ .StaticURL ]}]/img/icons/favicon.png">
   <!-- Add to home screen for Android and modern mobile browsers -->
   <link rel="manifest" id="manifestPlaceholder" crossorigin="use-credentials">
   <meta name="theme-color" content="#2979ff">
@@ -34,8 +33,8 @@
 
     var fullStaticURL = window.location.origin + window.FileBrowser.StaticURL;
     var dynamicManifest = {
-      "name": window.FileBrowser.Name || 'File Browser',
-      "short_name": window.FileBrowser.Name || 'File Browser',
+      "name": window.FileBrowser.Name || 'KloverCloud File Browser',
+      "short_name": window.FileBrowser.Name || 'KloverCloud File Browser',
       "icons": [
         {
           "src": fullStaticURL + "/img/icons/android-chrome-192x192.png",

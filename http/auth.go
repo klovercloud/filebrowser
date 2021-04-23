@@ -183,7 +183,7 @@ func printToken(w http.ResponseWriter, _ *http.Request, d *data, user *users.Use
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().Add(TokenExpirationTime).Unix(),
-			Issuer:    "File Browser",
+			Issuer:    "KloverCloud File Browser",
 		},
 	}
 

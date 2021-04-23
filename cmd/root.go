@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/afero"
@@ -37,7 +38,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	cobra.MousetrapHelpText = ""
 
-	rootCmd.SetVersionTemplate("File Browser version {{printf \"%s\" .Version}}\n")
+	rootCmd.SetVersionTemplate("KloverCloud File Browser version {{printf \"%s\" .Version}}\n")
 
 	flags := rootCmd.Flags()
 	persistent := rootCmd.PersistentFlags()
@@ -71,12 +72,12 @@ func addServerFlags(flags *pflag.FlagSet) {
 
 var rootCmd = &cobra.Command{
 	Use:   "filebrowser",
-	Short: "A stylish web-based file browser",
-	Long: `File Browser CLI lets you create the database to use with File Browser,
+	Short: "A stylish web-based KloverCloud File Browser",
+	Long: `KloverCloud File Browser CLI lets you create the database to use with KloverCloud File Browser,
 manage your users and all the configurations without acessing the
 web interface.
 
-If you've never run File Browser, you'll need to have a database for
+If you've never run KloverCloud File Browser, you'll need to have a database for
 it. Don't worry: you don't need to setup a separate database server.
 We're using Bolt DB which is a single file database and all managed
 by ourselves.
@@ -104,7 +105,7 @@ The environment variables are prefixed by "FB_" followed by the option
 name in caps. So to set "database" via an env variable, you should
 set FB_DATABASE.
 
-Also, if the database path doesn't exist, File Browser will enter into
+Also, if the database path doesn't exist, KloverCloud File Browser will enter into
 the quick setup mode and a new database will be bootstraped and a new
 user created with the credentials from options "username" and "password".`,
 	Run: python(func(cmd *cobra.Command, args []string, d pythonData) {
@@ -174,7 +175,13 @@ user created with the credentials from options "username" and "password".`,
 		defer listener.Close()
 
 		log.Println("Listening on", listener.Addr().String())
-		if err := http.Serve(listener, handler); err != nil {
+		srv := &http.Server{
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 1800 * time.Second,
+			Handler:      handler,
+		}
+
+		if err := srv.Serve(listener); err != nil {
 			log.Fatal(err)
 		}
 	}, pythonConfig{allowNoDB: true}),
@@ -351,12 +358,17 @@ func quickSetup(flags *pflag.FlagSet, d pythonData) {
 	err = d.store.Settings.SaveServer(ser)
 	checkErr(err)
 
-	username := getParam(flags, "username")
-	password := getParam(flags, "password")
+	username := os.Getenv("USERNAME")
+	password := os.Getenv("PASSWORD")
 
+	if username == "" {
+		username = "admin"
+	}
 	if password == "" {
 		password, err = users.HashPwd("admin")
 		checkErr(err)
+	} else {
+		password, err = users.HashPwd(password)
 	}
 
 	if username == "" || password == "" {

@@ -4,7 +4,7 @@
       <button @click="openSidebar" :aria-label="$t('buttons.toggleSidebar')" :title="$t('buttons.toggleSidebar')" class="action">
         <i class="material-icons">menu</i>
       </button>
-      <img :src="logoURL" alt="File Browser">
+      <img :src="logoURL" alt="KloverCloud File Browser">
       <search v-if="isLogged"></search>
     </div>
     <div>
@@ -20,7 +20,7 @@
         <!-- Menu that shows on listing AND mobile when there are files selected -->
         <div id="file-selection" v-if="isMobile && isListing && !isSharing">
           <span v-if="selectedCount > 0">{{ selectedCount }} selected</span>
-          <share-button v-show="showShareButton"></share-button>
+          <!--<share-button v-show="showShareButton"></share-button>-->
           <rename-button v-show="showRenameButton"></rename-button>
           <copy-button v-show="showCopyButton"></copy-button>
           <move-button v-show="showMoveButton"></move-button>
@@ -30,7 +30,7 @@
         <!-- This buttons are shown on a dropdown on mobile phones -->
         <div id="dropdown" :class="{ active: showMore }">
           <div v-if="!isListing || !isMobile">
-            <share-button v-show="showShareButton"></share-button>
+            <!--<share-button v-show="showShareButton"></share-button>-->
             <rename-button v-show="showRenameButton"></rename-button>
             <copy-button v-show="showCopyButton"></copy-button>
             <move-button v-show="showMoveButton"></move-button>
@@ -85,7 +85,7 @@ export default {
     UploadButton,
     SwitchButton,
     MoveButton,
-    ShellButton
+    ShellButton,
   },
   data: function () {
     return {

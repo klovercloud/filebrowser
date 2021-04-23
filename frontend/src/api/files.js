@@ -31,6 +31,31 @@ export async function fetch (url) {
   }
 }
 
+/*export async function extract (url) {
+  url = removePrefix(url)
+  const res = await fetchURL(`/api/unzip${url}`, {})
+  if (res.status === 200) {
+    return "Operation Successful"
+  } else {
+    throw new Error(res.status)
+  }
+}*/
+
+export async function extract (url) {
+  url = removePrefix(url)
+  const res = await fetchURL(`/api/unzip${url}`, {})
+  if (res.status === 200) {
+    return "Operation Successful"
+  } else {
+    if(res.status==403) {
+      throw new Error("Permission Denied!!")
+    } else {
+      throw new Error(res.status)
+    }
+
+  }
+}
+
 async function resourceAction (url, method, content) {
   url = removePrefix(url)
 
@@ -55,6 +80,31 @@ export async function remove (url) {
 
 export async function put (url, content = '') {
   return resourceAction(url, 'PUT', content)
+}
+
+export function unzip (format, ...files) {
+  let url = `${baseURL}/api/unzip`
+
+  if (files.length === 1) {
+    url += removePrefix(files[0]) + '?'
+  } else {
+    let arg = ''
+
+    for (let file of files) {
+      arg += removePrefix(file) + ','
+    }
+
+    arg = arg.substring(0, arg.length - 1)
+    arg = encodeURIComponent(arg)
+    url += `/?files=${arg}&`
+  }
+
+  if (format !== null) {
+    url += `algo=${format}&`
+  }
+
+  url += `auth=${store.state.jwt}`
+  window.open(url)
 }
 
 export function download (format, ...files) {

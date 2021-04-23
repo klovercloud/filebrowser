@@ -26,6 +26,8 @@ func handleWithStaticData(w http.ResponseWriter, _ *http.Request, d *data, box *
 		return http.StatusInternalServerError, err
 	}
 
+	d.settings.Branding.Theme = "dark"
+
 	data := map[string]interface{}{
 		"Name":            d.settings.Branding.Name,
 		"DisableExternal": d.settings.Branding.DisableExternal,

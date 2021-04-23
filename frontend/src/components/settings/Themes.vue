@@ -1,3 +1,4 @@
+<!--
 <template>
   <select v-on:change="change" :value="theme">
     <option value="">{{ $t('settings.themes.light') }}</option>
@@ -16,3 +17,4 @@ export default {
   }
 }
 </script>
+-->

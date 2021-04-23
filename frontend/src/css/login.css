@@ -63,3 +63,10 @@
   font-size: 0.9rem;
   margin: .5rem 0;
 }
+
+
+
+#clr {
+  background-color: #243C64;
+  border: 10px solid #243c64;
+}

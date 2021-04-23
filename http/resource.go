@@ -71,7 +71,6 @@ func resourceDeleteHandler(fileCache FileCache) handleFunc {
 		if err != nil {
 			return errToStatus(err), err
 		}
-
 		// delete thumbnails
 		for _, previewSizeName := range PreviewSizeNames() {
 			size, _ := ParsePreviewSize(previewSizeName)
@@ -317,6 +316,7 @@ var resourcePostPutHandler = withUser(func(w http.ResponseWriter, r *http.Reques
 	err := d.RunHook(func() error {
 		dir, _ := path.Split(r.URL.Path)
 		err := d.user.Fs.MkdirAll(dir, 0775)
+
 		if err != nil {
 			return err
 		}

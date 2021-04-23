@@ -1,8 +1,8 @@
 <template>
   <div id="login" :class="{ recaptcha: recaptcha }">
-    <form @submit="submit">
-      <img :src="logoURL" alt="File Browser">
-      <h1>{{ name }}</h1>
+    <form @submit="submit" id="clr">
+      <img :src="logoURL" alt="KloverCloud File Browser">
+      <h3 style="text-align: center">{{ name }}</h3>
       <div v-if="error !== ''" class="wrong">{{ error }}</div>
 
       <input class="input input--block" type="text" v-model="username" :placeholder="$t('login.username')">

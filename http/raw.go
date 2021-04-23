@@ -1,11 +1,15 @@
 package http
 
 import (
+	"archive/zip"
 	"bytes"
 	"errors"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	gopath "path"
 	"path/filepath"
 	"strings"
@@ -77,6 +81,43 @@ func setContentDisposition(w http.ResponseWriter, r *http.Request, file *files.F
 		w.Header().Set("Content-Disposition", "attachment; filename*=utf-8''"+url.PathEscape(file.Name))
 	}
 }
+
+var rawHandlerForUnzipping = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	if !d.user.Perm.Download {
+		return http.StatusAccepted, nil
+	}
+
+	file, err := files.NewFileInfo(files.FileOptions{
+		Fs:      d.user.Fs,
+		Path:    r.URL.Path,
+		Modify:  d.user.Perm.Modify,
+		Expand:  false,
+		Checker: d,
+	})
+
+	if err != nil {
+		return errToStatus(err), err
+	}
+
+	if !file.IsDir {
+		fd, err := file.Fs.Open(file.Path)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+		defer fd.Close()
+		server, err := d.store.Settings.GetServer()
+		if err != nil {
+			return errToStatus(err), err
+		}
+
+		err = unzip(server.Root+file.Path, strings.ReplaceAll(server.Root+file.Path, "/"+file.Name, ""))
+		if err != nil {
+			return errToStatus(err), err
+		}
+		return http.StatusOK, nil
+	}
+	return 0, err
+})
 
 var rawHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	if !d.user.Perm.Download {
@@ -211,4 +252,61 @@ func rawFileHandler(w http.ResponseWriter, r *http.Request, file *files.FileInfo
 
 	http.ServeContent(w, r, file.Name, file.ModTime, fd)
 	return 0, nil
+}
+
+func unzip(src, dest string) error {
+	log.Println("[INFO] Starting to unzip. Src:", src, ". Destination:", dest)
+
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		log.Println("[ERROR] Failed opening src zip file while unzipping. Msg:", err.Error())
+		return err
+	}
+
+	defer r.Close()
+
+	for _, f := range r.File {
+		rc, err := f.Open()
+		if err != nil {
+			log.Println("[ERROR] Failed opening file while unzipping. Msg:", err.Error())
+			return err
+		}
+
+		defer rc.Close()
+
+		fpath := filepath.Join(dest, f.Name)
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(fpath, f.Mode())
+		} else {
+			var fdir string
+			if lastIndex := strings.LastIndex(fpath, string(os.PathSeparator)); lastIndex > -1 {
+				fdir = fpath[:lastIndex]
+			}
+
+			err = os.MkdirAll(fdir, f.Mode())
+			if err != nil {
+				log.Println("[ERROR] Failed creating directory while unzipping. Msg:", err.Error())
+				return err
+			}
+			f, err := os.OpenFile(
+				fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				log.Println("[ERROR] Failed to OS open file while unzipping. Msg:", err.Error())
+				return err
+			}
+			defer f.Close()
+
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				log.Println("[ERROR] Failed to IO copy while unzipping. Msg:", err.Error())
+				return err
+			}
+			f.Close()
+		}
+		rc.Close()
+	}
+
+	log.Println("[INFO] Unzipping finished successfully")
+
+	return nil
 }

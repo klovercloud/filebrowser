@@ -1,2 +1,5 @@
-*
-!filebrowser
+.git
+.idea
+.vscode
+filebrowser
+frontend/node_modules

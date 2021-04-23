@@ -1,11 +1,11 @@
 :root {
-  --background: #141D24;
-  --surfacePrimary: #20292F;
-  --surfaceSecondary: #3A4147;
+  --background: #182641;
+  --surfacePrimary: #1A2C4A;
+  --surfaceSecondary: #192648;
   --divider: rgba(255, 255, 255, 0.12);
-  --icon: #ffffff;
-  --textPrimary: rgba(255, 255, 255, 0.87);
-  --textSecondary: rgba(255, 255, 255, 0.6);
+  --icon: #C5CEDA;
+  --textPrimary: #C5CEDA;
+  --textSecondary: #D7DCE3;
 }
 
 body {

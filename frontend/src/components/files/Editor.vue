@@ -82,14 +82,14 @@ export default {
     window.removeEventListener('keydown', this.keyEvent)
     this.editor.destroy();
   },
-  mounted: function () {    
+  mounted: function () {
     const fileContent = this.req.content || '';
 
     this.editor = ace.edit('editor', {
       value: fileContent,
       showPrintMargin: false,
       readOnly: this.req.type === 'textImmutable',
-      theme: 'ace/theme/chrome',
+      theme: 'ace/theme/twilight',
       mode: modelist.getModeForPath(this.req.name).mode,
       wrap: true
     })

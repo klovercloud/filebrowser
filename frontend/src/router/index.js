@@ -7,7 +7,7 @@ import Share from '@/views/Share'
 import Users from '@/views/settings/Users'
 import User from '@/views/settings/User'
 import Settings from '@/views/Settings'
-import GlobalSettings from '@/views/settings/Global'
+//import GlobalSettings from '@/views/settings/Global'
 import ProfileSettings from '@/views/settings/Profile'
 import Shares from '@/views/settings/Shares'
 import Error403 from '@/views/errors/403'
@@ -73,14 +73,14 @@ const router = new Router({
               name: 'Shares',
               component: Shares
             },
-            {
+            /*{
               path: '/settings/global',
               name: 'Global Settings',
               component: GlobalSettings,
               meta: {
                 requiresAdmin: true
               }
-            },
+            },*/
             {
               path: '/settings/users',
               name: 'Users',
