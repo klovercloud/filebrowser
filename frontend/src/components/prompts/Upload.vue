@@ -25,7 +25,7 @@
 
 import Resumable from 'resumablejs';
 import { mapMutations } from 'vuex';
-import { baseURL, chunkSizeFactor,simultaneousUploads } from '@/utils/constants';
+import { baseURL, chunkSizeFactor, simultaneousUploads } from '@/utils/constants';
 
 export default {
   name: 'upload',
@@ -34,9 +34,6 @@ export default {
 
     uploadFile: function () {
       document.getElementById('upload-input').click()
-
-      console.log("route: ")
-      console.log(this.$route.params.pathMatch);
       var self = this;
       var r = new Resumable({
         target: `${baseURL}/api/chunk-upload`,
@@ -49,12 +46,9 @@ export default {
       if (!r.support) location.href = '/some-old-crappy-uploader';
 
       r.on('fileAdded', function (file) {
-        console.log("fileAdded")
-        console.log(file)
 
         let conflict = false;
         let req = self.$store.state.req
-        console.log(req)
         let fileName = file.relativePath
         for (let item of req.items) {
           if (item.name === fileName && !item.isDir)
@@ -64,19 +58,13 @@ export default {
           self.$store.commit('closeHovers')
           r.upload()
         }
-        else
-          console.log("Conflict detected by custom function")
-
-        if (conflict) {
+        else {
           let result = confirm("Do you want to replace the file?");
           if (result) {
             self.$store.commit('closeHovers')
-            console.log("Overwrite permitted")
-            console.log("Overwriting")
             r.upload()
           } else {
             self.$store.commit('closeHovers')
-            console.log("Permission Denied!")
             r.removeFile(file)
           }
         }
@@ -86,14 +74,12 @@ export default {
         self.$store.commit('setProgress', self.progress)
       })
       r.on('fileSuccess', function (file, message) {
-        console.log("Success")
         self.$store.commit('setReload', true)
         self.$store.commit('setProgress', 0)
-        console.log(file, message)
+        console.log('[INFO] File uploaded successfully', file, message)
       });
       r.on('fileError', function (file, message) {
-        console.log("Failed ")
-        console.log(file, message)
+        console.log('[ERROR] Failed to upload file', file, message)
       });
     },
     uploadFolder: function () {
@@ -112,15 +98,11 @@ export default {
       if (!r.support) location.href = '/some-old-crappy-uploader';
 
       r.on('filesAdded', function (files, filesSkipped) {
-        console.log("filesAdded")
-        console.log(files)
-        console.log(filesSkipped)
+        console.log('[INFO] Files skipped:', filesSkipped);
         let conflict = false;
         let req = self.$store.state.req
-        console.log(req)
         for (let i = 0; i < files.length; i++) {
           let folderName = self.dirName(files[i].relativePath)
-          console.log(folderName)
           for (let item of req.items) {
             if (item.name === folderName && item.isDir) {
               conflict = true
@@ -133,19 +115,13 @@ export default {
           self.$store.commit('closeHovers')
           r.upload()
         }
-        else
-          console.log("Conflict detected by custom function")
-
-        if (conflict) {
+        else {
           let result = confirm("Do you want to replace the folder?");
           if (result) {
             self.$store.commit('closeHovers')
-            console.log("Overwrite permitted")
-            console.log("Overwriting")
             r.upload()
           } else {
             self.$store.commit('closeHovers')
-            console.log("Permission Denied!")
             r.cancel()
           }
         }
@@ -153,21 +129,17 @@ export default {
       r.on('progress', function () {
         self.progress = r.progress() * 100
         self.$store.commit('setProgress', self.progress)
-        // console.log(`Progress: ${self.progress}`)
       })
       r.on('fileSuccess', function (file, message) {
-        console.log("File Success")
-        console.log(file, message)
+        console.log('[INFO] File uploaded successfully', file, message)
       });
       r.on('fileError', function (file, message) {
-        console.log("Failed ")
-        console.log(file, message)
+        console.log('[ERROR] Failed to upload file', file, message)
       });
-
       r.on('complete', function () {
-        console.log("complete")
         self.$store.commit('setReload', true)
         self.$store.commit('setProgress', 0)
+        console.log('[INFO] Upload completed')
       });
     },
     dirName: function (x) {
