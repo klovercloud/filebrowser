@@ -14,6 +14,8 @@ const theme = window.FileBrowser.Theme
 const enableThumbs = window.FileBrowser.EnableThumbs
 const resizePreview = window.FileBrowser.ResizePreview
 const enableExec = window.FileBrowser.EnableExec
+const chunkSizeFactor = 5   //Size in MB
+const simultaneousUploads = 3
 
 export {
   name,
@@ -30,5 +32,7 @@ export {
   theme,
   enableThumbs,
   resizePreview,
-  enableExec
+  enableExec,
+  chunkSizeFactor,
+  simultaneousUploads
 }

@@ -25,7 +25,7 @@
 
 import Resumable from 'resumablejs';
 import { mapMutations } from 'vuex';
-import { baseURL } from '@/utils/constants';
+import { baseURL, chunkSizeFactor,simultaneousUploads } from '@/utils/constants';
 
 export default {
   name: 'upload',
@@ -40,6 +40,8 @@ export default {
       var self = this;
       var r = new Resumable({
         target: `${baseURL}/api/chunk-upload`,
+        chunkSize: chunkSizeFactor * 1024 * 1024,
+        simultaneousUploads: simultaneousUploads,
         query: {subPath : this.$route.params.pathMatch}
       });
       r.assignBrowse(document.getElementById('upload-input'));
@@ -101,6 +103,8 @@ export default {
       var self = this;
       var r = new Resumable({
         target: `${baseURL}/api/chunk-upload`,
+        chunkSize: chunkSizeFactor * 1024 * 1024,
+        simultaneousUploads: simultaneousUploads,
         query: {subPath : this.$route.params.pathMatch}
       });
       r.assignBrowse(document.getElementById('upload-folder-input'), true);
