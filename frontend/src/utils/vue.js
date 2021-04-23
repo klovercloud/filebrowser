@@ -11,7 +11,7 @@ Vue.config.productionTip = true
 const notyDefault = {
   type: 'info',
   layout: 'bottomRight',
-  timeout: 1000,
+  timeout: 5000,
   progressBar: true
 }
 

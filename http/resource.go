@@ -105,7 +105,6 @@ var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int
 	//	os.RemoveAll(tempFolder)
 	//}
 
-
 	if _, err := os.Stat(tempFolder); os.IsNotExist(err) {
 		os.Mkdir(tempFolder, os.ModePerm)
 	}
@@ -183,10 +182,10 @@ var resumableUpload = func(w http.ResponseWriter, r *http.Request, d *data) (int
 
 func combineChunks(totalPartsNum uint64, path string, fileName string, rootDir string, subPath string) error {
 
-	dir := rootDir + "/" + subPath;
+	dir := rootDir + "/" + subPath
 	fileName = dir + fileName
 
-	log.Println("Combining chunks for:", fileName)
+	log.Println("[INFO] Combining chunks for:", fileName)
 
 	if _, err := os.Stat(filepath.Dir(fileName)); os.IsNotExist(err) {
 		os.Mkdir(filepath.Dir(fileName), os.ModePerm)
@@ -273,7 +272,7 @@ func combineChunks(totalPartsNum uint64, path string, fileName string, rootDir s
 		}
 	}
 
-	log.Println("All chunks combined for:", fileName)
+	log.Println("[INFO] All chunks combined for:", fileName)
 
 	// now, we close the fileName
 	file.Close()
