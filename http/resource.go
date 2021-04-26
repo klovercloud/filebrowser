@@ -188,7 +188,7 @@ func combineChunks(totalPartsNum uint64, path string, fileName string, rootDir s
 	log.Println("[INFO] Combining chunks for:", fileName)
 
 	if _, err := os.Stat(filepath.Dir(fileName)); os.IsNotExist(err) {
-		os.Mkdir(filepath.Dir(fileName), os.ModePerm)
+		os.MkdirAll(filepath.Dir(fileName), os.ModePerm)
 	}
 
 	_, err := os.Create(fileName)
