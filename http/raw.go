@@ -276,14 +276,14 @@ func unzip(src, dest string) error {
 
 		fpath := filepath.Join(dest, f.Name)
 		if f.FileInfo().IsDir() {
-			os.MkdirAll(fpath, f.Mode())
+			os.MkdirAll(fpath, 0775)
 		} else {
 			var fdir string
 			if lastIndex := strings.LastIndex(fpath, string(os.PathSeparator)); lastIndex > -1 {
 				fdir = fpath[:lastIndex]
 			}
 
-			err = os.MkdirAll(fdir, f.Mode())
+			err = os.MkdirAll(fdir, 0775)
 			if err != nil {
 				log.Println("[ERROR] Failed creating directory while unzipping. Msg:", err.Error())
 				return err
